@@ -23,16 +23,20 @@ preco <- ts(petr$preco,
 
 # retorno simples ---------------------------------------------------------
 
+((petr$preco[2] - petr$preco[1]) / petr$preco[1] )*100
+
+
+((petr$preco[7] - petr$preco[1]) / petr$preco[1] )*100
 
 
 
+# log retorno -------------------------------------------------------------
+
+(log(petr$preco[6] / petr$preco[5])) * 100
 
 
 
-
-
-
-
+(log(petr$preco[10] / petr$preco[5])) * 100
 
 
 

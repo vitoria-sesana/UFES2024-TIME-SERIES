@@ -39,3 +39,27 @@ retorno_medio_anual <- (1 + retorno_medio_mensal)^12 - 1
 # Exibir o retorno médio anual
 retorno_medio_anual
 
+
+
+# retorno medio anual -----------------------------------------------------
+
+
+n <- sp500_monthly %>% nrow()
+n <- n/12
+
+((as.numeric(sp500_monthly$GSPC.Close[88]) / as.numeric(sp500_monthly$GSPC.Close[1])) ^ (1/n)) - 1
+
+
+# retorno simples anualizado ----------------------------------------------
+
+(mean(retornos_mensais)*12)*100
+
+
+# valor investido ---------------------------------------------------------
+
+valor_inicial <- 1 
+cagr <- 0.1314
+anos <- 7
+# Valor final
+valor_final <- valor_inicial * (1 + cagr)^anos
+valor_final
