@@ -44,14 +44,14 @@ log_retorno <- ts(ibov$retorno,
                     frequency = 365)
 
 print(preco)
-plot.ts(preco)
+plot.ts(preco, ylab = "Preços", xlab = "Tempo")
 
-print(retorno)
-plot.ts(retorno)
+# print(retorno)
+# plot.ts(retorno)
 
 print(log_retorno)
-plot.ts(log_retorno)
-
+plot.ts(log_retorno, ylab = "Log retorno", xlab = "Tempo")
+IBOV_grafico_serie_LR
 
 # descritiva --------------------------------------------------------------
 
@@ -77,16 +77,39 @@ estatisticas_lr <- ibov %>%
 
 estatisticas <- rbind(estatisticas_serie, estatisticas_lr) 
 row.names(estatisticas) <- c('Série', "Log-retorno") 
-
+estatisticas
 tabela_latex <- xtable::xtable(estatisticas, caption = "Estatísticas Descritivas")
 print(tabela_latex, include.rownames = FALSE)
 
 
 # histograma --------------------------------------------------------------
 
-hist(ibov$preco)
+hist(ibov$preco,
+     xlab = "Preços",
+     ylab = "Frequência",
+     main = "")
 
-hist(round(ibov$log_retorno,2))
+hist(rnorm(length(ibov$preco),
+           mean = estatisticas_serie$media, 
+           sd = estatisticas_serie$variancia),
+     xlab = "Normal",
+     ylab = "Frequência",
+     main = "")
+
+
+hist(round(ibov$log_retorno,2),
+     xlab = "Log-retornos",
+     ylab = "Frequência",
+     main = "")
+
+hist(rnorm(length(ibov$log_retorno),
+           mean = estatisticas_lr$media, 
+           sd = estatisticas_lr$variancia),
+     xlab = "Normal",
+     ylab = "Frequência",
+     main = "")
+
+
 # da serie, do log retorno e dois histograma com as médias e variâncias das mesmas
 
 
