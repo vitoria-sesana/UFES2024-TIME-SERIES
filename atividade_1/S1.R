@@ -1,53 +1,115 @@
 library(dplyr)
+library(ggplot2)
 
 # atividade_01 ------------------------------------------------------------
 
 ibov <- read.csv(file = "atividade_1/base/ibovespa_diario.csv") %>% 
   janitor::clean_names() %>% 
-  rename(retorno = var) %>% 
-  arrange(date) %>% # Garantir que os dados estejam ordenados por data
-  mutate(
-    return_simple = (price / lag(price)) - 1,   # Retorno simples
-    return_log = log(price / lag(price))       # Retorno logarítmico
-  ) %>% 
+  rename(retorno = var, preco = ultimo) %>%  
   mutate_all(~ gsub("%", "", .)) %>% 
   mutate_all(~ gsub(",", ".", .)) %>%
   mutate_all(~ gsub("[A-Za-z]", "", .)) %>% 
   mutate(data = as.Date(data, format = "%d.%m.%Y")) %>%
-  mutate(var = as.numeric(retorno)) %>% 
-  select(data, retorno) %>% 
-  mutate(data = as.Date(data)) %>% 
-  mutate(log_retorno = log(1+retorno))
-
+  mutate(retorno = as.numeric(retorno),
+         preco = as.numeric(preco),
+         data = as.Date(data),
+         log_retorno = log(preco) - lag(log(preco))) %>% 
+  select(data, retorno, log_retorno, preco)
+  
 
 # análises iniciais -------------------------------------------------------
 
 ibov$data %>% min
 ibov$data %>% max
 
-ibov %>% head; ibov %>% tail()
+ibov %>% head
+ibov %>% tail()
 
 # gráfico
 
-ibov_serie <- ts(ibov_data$var, 
+preco <- ts(ibov$preco, 
+              start = c(1994, 7, 4), 
+              end = c(2020, 8, 19),
+              frequency = 365)
+
+
+retorno <- ts(ibov$retorno, 
                  start = c(1994, 7, 4), 
                  end = c(2020, 8, 19),
                  frequency = 365)
-ibov_serie
 
-print(ibov_serie)
+log_retorno <- ts(ibov$retorno, 
+                    start = c(1994, 7, 5), 
+                    end = c(2020, 8, 19),
+                    frequency = 365)
 
-plot.ts(ibov_serie)
+print(preco)
+plot.ts(preco)
 
-ibov_data %>% 
-  ggplot(aes(x = data, y = var)) + 
-  geom_line() + 
-  geom_point() + 
-  # ggthemes::theme_fivethirtyeight() + 
-  labs(x = "", y = "Precipitação em polegadas",
-       title = "Chuva Anual em Los Angeles, 1878 - 1992",
-       subtitle = "Em polegadas de Chuva por Ano")
+print(retorno)
+plot.ts(retorno)
 
-# atividade 3 -------------------------------------------------------------
+print(log_retorno)
+plot.ts(log_retorno)
 
-petr <- read.csv(file = "atividade_1/base/petr4_diario.csv")
+
+# descritiva --------------------------------------------------------------
+
+estatisticas_serie <- ibov %>%
+  summarise(
+    media = mean(preco),
+    mediana = median(preco),
+    variancia = var(preco),
+    assimetria = timeDate::skewness(preco),
+    curtose =  timeDate::kurtosis(preco)
+  )
+
+estatisticas_lr <- ibov %>%
+  slice(-1) %>% 
+  summarise(
+    media = mean(log_retorno),
+    mediana = median(log_retorno),
+    variancia = var(log_retorno),
+    assimetria = timeDate::skewness(log_retorno),
+    curtose =  timeDate::kurtosis(log_retorno)
+  )
+
+
+estatisticas <- rbind(estatisticas_serie, estatisticas_lr) 
+row.names(estatisticas) <- c('Série', "Log-retorno") 
+
+tabela_latex <- xtable::xtable(estatisticas, caption = "Estatísticas Descritivas")
+print(tabela_latex, include.rownames = FALSE)
+
+
+# histograma --------------------------------------------------------------
+
+hist(ibov$preco)
+
+hist(round(ibov$log_retorno,2))
+# da serie, do log retorno e dois histograma com as médias e variâncias das mesmas
+
+
+# qq-plot -----------------------------------------------------------------
+qqnorm(ibov$preco)
+qqline(ibov$preco, col = "red")
+
+qqnorm(ibov$log_retorno)
+qqline(ibov$log_retorno, col = "red")
+
+
+# Teste do ruído branco ---------------------------------------------------
+
+# Teste de Ljung-Box
+resultado <- Box.test(preco, lag = 20, type = "Ljung-Box")
+
+# Exibir resultados
+print(resultado)
+
+# -------------------------------- 
+# Teste de Ljung-Box
+resultado <- Box.test(log_retorno, lag = 20, type = "Ljung-Box")
+
+# Exibir resultados
+print(resultado)
+
