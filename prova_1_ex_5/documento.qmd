@@ -1,0 +1,43 @@
+---
+title: "Exercício 5  Prova 1"
+format: pdf
+toc: true 
+toc-depth: 3
+number-sections: true
+number-depth: 1
+toc-title: Sumário
+author: Vitória Nascimento de Jesus Sesana
+date-modified: UFES, Dezembro de 2024
+editor: visual
+crossref: 
+  fig-title: '**Figura**'
+  fig-prefix: Figura
+geometry: 
+  - top=30mm
+  - left=20mm
+  - right=20mm
+  - bottom=30mm
+header-includes:
+    - \usepackage{caption}
+---
+
+\captionsetup[table]{name=Tabela}
+
+```{r Opções, include=FALSE}
+options(scipen = 999) # notação científica desabilitada
+
+knitr::opts_chunk$set(echo = TRUE, 
+                      warning = FALSE, 
+                      message = FALSE, 
+                      fig.align = "center",
+                      fig.width = 15
+                      )
+```
+
+```{r Bibliotecas, include=FALSE}
+
+```
+
+
+\pagebreak
+

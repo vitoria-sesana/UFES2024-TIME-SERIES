@@ -31,7 +31,7 @@ min(ibov$date)
 
 hist(ibov$log_retorno, main = "", xlab = "Preço", ylab="Frequência")
 
-preco <- ts(ibov$log_retorno, 
+preco <- ts(ibov$log_retorno[-1], 
             start = c(2023, 1, 2), 
             end = c(2024, 1, 12),
             frequency = 365)
@@ -40,3 +40,5 @@ tabela_latex <- xtable::xtable(estatisticas_serie, caption = "Estatísticas Desc
 print(tabela_latex, include.rownames = FALSE)
 
 
+
+acf(preco, lag.max = 20, main = "")
