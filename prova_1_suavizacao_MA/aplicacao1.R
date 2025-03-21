@@ -10,66 +10,78 @@ if(!require(lmtest)) install.packages("lmtest", repos = "http://cran.us.r-projec
 if(!require(car)) install.packages("car", repos = "http://cran.us.r-project.org")
 library(dplyr)
 library(tseries)
-
+library(ggplot2)
 # descrição ----------------------------------------------------------------
-# Vendas de vinho tinto australiano, janeiro de 1980 a outubro de 1991
 
-serie_wine <- ts(itsmr::wine, frequency = 12, start = c(1980, 1))
-plot.ts(serie_wine)
-plot(decompose(serie_wine))
-
-itsmr::plotc(wine); itsmr::plota(wine)
-
-
-# tendencia ---------------------------------------------------------------
-# teste de Wald-Wolfowitz ou teste de sequências
-sequencia_binaria <- diff(serie_wine) > 0  
-resultado <- runs.test(as.factor(sequencia_binaria))
-print(resultado)
-
-# sazonalidade ------------------------------------------------------------
-# teste de Kruskal-Wallis 
-dados_ano = cbind(serie = as.vector(serie_wine), ano = factor(rep(1:12, each = 12)))
-dados_ano = dados_ano[1:142,]
-resultado <- kruskal.test(serie_wine ~ ano, data = dados_ano)
-print(resultado)
-
-# diferenciação -----------------------------------------------------------
-
-dserie<-diff(serie_wine)
-itsmr::plotc(dserie)
-itsmr::plota(dserie)
-plot(decompose(dserie))
-
+base <- readxl::read_xls("prova_1_suavizacao_MA/bases/temperatura.xls")$Ubatuba
+serie_temp_ubatuba <- ts(base, frequency = 12, start = c(1976, 1))
+plot.ts(serie_temp_ubatuba)
+plot(decompose(serie_temp_ubatuba))
+itsmr::plotc(serie_temp_ubatuba); itsmr::plota(serie_temp_ubatuba)
+serie_temp_ubatuba
 
 # médias móveis -----------------------------------------------------------
-itsmr::plotc(serie_wine)
-model1 <- itsmr::smooth.ma(serie_wine, q = 2)
-model2 <- itsmr::smooth.ma(serie_wine, q = 8)
-model3 <- itsmr::smooth.ma(serie_wine, q = 12)
-itsmr::plotc(model1)
-itsmr::plotc(model2)
-itsmr::plotc(model3)
+
+media_movel <- function(serie, n) {
+  suavizado <- rep(NA, length(serie))  
+  for (i in n:length(serie)) {
+    suavizado[i] <- mean(serie[(i-n+1):i])
+  }
+  return(suavizado)
+}
+
+n_valores <- c(2, 5, 12)
+
+resultado <- data.frame(Original = serie_temp_ubatuba)
+for (n in n_valores) {
+  resultado[[paste0("Suavizado_n", n)]] <- media_movel(serie_temp_ubatuba, n)
+}
+print(resultado)
+
+resultado <- resultado %>% 
+  mutate(tempo = 1:120)
+
+dados_long <- tidyr::pivot_longer(resultado, cols = -tempo, names_to = "Série", values_to = "Valor")
+
+
+ggplot(dados_long, aes(x = tempo, y = Valor, color = Série)) +
+  geom_line(size = 1) +  
+  geom_point(size = 2) + 
+  labs(title = "Série Original e Suavizações",
+       x = "Tempo",
+       y = "Valor") +
+  theme_minimal() +  
+  scale_color_manual(values = c("black", "blue", "red", "green")) +  
+  theme(legend.title = element_blank())  
 
 # suaviação exponencial ---------------------------------------------------
-alpha1 <- forecast::ses(serie_wine, alpha = 0.3, h = 12, initial = "optimal")
-alpha2 <- forecast::ses(serie_wine, alpha = 0.5, h = 12)
-alpha3 <- forecast::ses(serie_wine, alpha = 0.9, h = 12)
+suavizacao_exponencial <- function(serie, alpha) {
+  suavizado <- numeric(length(serie_temp_ubatuba))  
+  suavizado[1] <- serie_temp_ubatuba[1]  
+  
+  for (t in 2:length(serie)) {
+    suavizado[t] <- alpha * serie_temp_ubatuba[t] + (1 - alpha) * suavizado[t - 1]
+  }
+  return(suavizado)
+}
 
-alpha1$model
-alpha1
-# erro de cada ajuste
-list(alpha1, alpha2, alpha3) %>% purrr::map(accuracy) 
+suavizado <- suavizacao_exponencial(serie_temp_ubatuba, alpha = 0.3)
 
-plot(alpha1, plot.conf=FALSE, ylab = "", main="", fcol="white")
-lines(fitted(alpha1), col="blue")
-lines(fitted(alpha2), col="red")
-lines(fitted(alpha3), col="green")
-lines(alpha1$mean, col="blue", type="o")
-lines(alpha2$mean, col="red", type="o")
-lines(alpha3$mean, col="green", type="o")
-legend("topleft",lty=1, col=c(1,"blue","red","green"),
-       c("serie original", expression(alpha == 0.3),
-         expression(alpha == 0.5),
-         expression(alpha == 0.9)),
-       pch=1)
+resultado <- data.frame(Tempo = 1:length(serie_temp_ubatuba), 
+                        Original = serie_temp_ubatuba, 
+                        Suavizado = suavizado)
+
+
+print(resultado)
+
+dados_long <- tidyr::pivot_longer(resultado, cols = -Tempo, names_to = "Série", values_to = "Valor")
+
+ggplot(dados_long, aes(x = Tempo, y = Valor, color = Série)) +
+  geom_line(size = 1) +  
+  geom_point(size = 2) + 
+  labs(title = "Série Original e Suavização Exponencial",
+       x = "Tempo",
+       y = "Valor") +
+  theme_minimal() +  
+  scale_color_manual(values = c("black", "blue")) +  
+  theme(legend.title = element_blank())  
